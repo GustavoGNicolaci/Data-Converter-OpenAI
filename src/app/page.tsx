@@ -1,21 +1,14 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { DataConverter } from "@/components/data-converter"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { LanguageToggle } from "@/components/language-toggle"
 import { translations, type Language } from "@/lib/translations"
 
-
 export default function Home() {
   const [language, setLanguage] = useState<Language>("pt")
   const t = translations[language]
-
-  useEffect(() => {
-    console.log("[v0] Aplicação carregada com sucesso")
-    console.log("[v0] Idioma atual:", language)
-    console.log("[v0] Traduções carregadas:", t.title)
-  }, [language, t.title])
 
   return (
     <main className="min-h-screen bg-background">

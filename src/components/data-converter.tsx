@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, ArrowRight, Copy, Check, Wand2 } from "lucide-react"
+import { Loader2, ArrowRight, Copy, Check, Wand2, Sparkles } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
 type DataFormat = "json" | "xml" | "yaml" | "csv"
@@ -16,6 +16,8 @@ interface ConversionResult {
   success: boolean
   data?: string
   error?: string
+  method?: "ai" | "native"
+  summary?: string
 }
 
 interface DataConverterProps {
@@ -32,6 +34,8 @@ export function DataConverter({ language, translations: t }: DataConverterProps)
   const [isValidating, setIsValidating] = useState(false)
   const [validationResult, setValidationResult] = useState<{ valid: boolean; message: string } | null>(null)
   const [copied, setCopied] = useState(false)
+  const [aiSummary, setAiSummary] = useState<string>("")
+  const [conversionMethod, setConversionMethod] = useState<"ai" | "native" | null>(null)
   const { toast } = useToast()
 
   const formatOptions = [
@@ -75,6 +79,9 @@ export function DataConverter({ language, translations: t }: DataConverterProps)
     }
 
     setIsConverting(true)
+    setAiSummary("")
+    setConversionMethod(null)
+
     try {
       const response = await fetch("/api/convert", {
         method: "POST",
@@ -90,6 +97,11 @@ export function DataConverter({ language, translations: t }: DataConverterProps)
 
       if (result.success && result.data) {
         setOutputData(result.data)
+        setConversionMethod(result.method || "native")
+        if (result.method === "ai" && result.summary) {
+          setAiSummary(result.summary)
+        }
+
         toast({
           title: t.success,
           description: t.conversionSuccess
@@ -262,6 +274,12 @@ export function DataConverter({ language, translations: t }: DataConverterProps)
               <CardTitle className="flex items-center gap-2">
                 {t.convertedData}
                 <Badge variant="secondary">{outputFormat.toUpperCase()}</Badge>
+                {conversionMethod === "ai" && (
+                  <Badge variant="outline" className="text-blue-600 border-blue-600">
+                    <Sparkles className="h-3 w-3 mr-1" />
+                    IA
+                  </Badge>
+                )}
               </CardTitle>
               <Button variant="outline" size="sm" onClick={copyToClipboard} disabled={!outputData}>
                 {copied ? <Check className="h-4 w-4 mr-1" /> : <Copy className="h-4 w-4 mr-1" />}
@@ -269,13 +287,27 @@ export function DataConverter({ language, translations: t }: DataConverterProps)
               </Button>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <Textarea
               placeholder={t.outputPlaceholder}
               value={outputData}
               readOnly
               className="min-h-[300px] font-mono text-sm bg-muted"
             />
+
+            {aiSummary && conversionMethod === "ai" && (
+              <Alert>
+                <Sparkles className="h-4 w-4" />
+                <AlertDescription>
+                  <div className="space-y-2">
+                    <div className="font-medium">
+                      {language === "pt" ? "Resumo da Conversão por IA:" : "AI Conversion Summary:"}
+                    </div>
+                    <div className="text-sm text-muted-foreground">{aiSummary}</div>
+                  </div>
+                </AlertDescription>
+              </Alert>
+            )}
           </CardContent>
         </Card>
       </div>
